@@ -40,20 +40,53 @@ return res.status(200).json(user)
 
 export const askToAssistant=async (req,res)=>{
    try {
+      console.log("askToAssistant called with command:", req.body?.command)
       const {command}=req.body
+      if (!command) {
+        return res.status(400).json({ response: "Command is required" })
+      }
+      
       const user=await User.findById(req.userId);
+      if (!user) {
+        return res.status(404).json({ response: "User not found" })
+      }
+      
       user.history.push(command)
-      user.save()
+      await user.save()
       const userName=user.name
       const assistantName=user.assistantName
+      
+      if (!assistantName) {
+        return res.status(400).json({ response: "Assistant name not set. Please customize your assistant first." })
+      }
+      
+      console.log("Calling geminiResponse with:", { command, assistantName, userName })
       const result=await geminiResponse(command,assistantName,userName)
+      console.log("geminiResponse returned:", result?.substring(0, 200)) // Log first 200 chars
+      
+      if (!result) {
+        return res.status(500).json({ response: "Failed to get response from AI" })
+      }
 
       const jsonMatch=result.match(/{[\s\S]*}/)
       if(!jsonMatch){
-         return res.ststus(400).json({response:"sorry, i can't understand"})
+         return res.status(400).json({response:"sorry, i can't understand"})
       }
-      const gemResult=JSON.parse(jsonMatch[0])
+      
+      let gemResult;
+      try {
+        gemResult=JSON.parse(jsonMatch[0])
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError, "Raw result:", result)
+        return res.status(500).json({response:"Failed to parse AI response"})
+      }
+      
       console.log(gemResult)
+      
+      if (!gemResult || !gemResult.type) {
+        return res.status(400).json({response:"Invalid response format from AI"})
+      }
+      
       const type=gemResult.type
 
       switch(type){
@@ -101,6 +134,16 @@ export const askToAssistant=async (req,res)=>{
      
 
    } catch (error) {
-  return res.status(500).json({ response: "ask assistant error" })
+      console.error("askToAssistant error:", error)
+      console.error("Error stack:", error.stack)
+      console.error("Error details:", {
+        message: error.message,
+        name: error.name,
+        code: error.code
+      })
+      return res.status(500).json({ 
+        response: error.message || "ask assistant error",
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      })
    }
 }

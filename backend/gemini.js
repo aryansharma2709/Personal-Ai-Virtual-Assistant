@@ -2,6 +2,16 @@ import axios from "axios"
 const geminiResponse=async (command,assistantName,userName)=>{
 try {
     const apiUrl=process.env.GEMINI_API_URL
+    const apiKey=process.env.GEMINI_API_KEY
+    
+    if (!apiUrl) {
+        throw new Error("GEMINI_API_URL environment variable is not set")
+    }
+    
+    if (!apiKey) {
+        throw new Error("GEMINI_API_KEY environment variable is not set")
+    }
+    
     const prompt = `You are a virtual assistant named ${assistantName} created by ${userName}. 
 You are not Google. You will now behave like a voice-enabled assistant.
 
@@ -42,18 +52,40 @@ Important:
 now your userInput- ${command}
 `;
 
+    // Build the full URL with API key if it's not already in the URL
+    let fullUrl = apiUrl;
+    if (!apiUrl.includes('key=')) {
+        const separator = apiUrl.includes('?') ? '&' : '?';
+        fullUrl = `${apiUrl}${separator}key=${apiKey}`;
+    }
 
-
-
-
-    const result=await axios.post(apiUrl,{
+    const result=await axios.post(fullUrl,{
     "contents": [{
     "parts":[{"text": prompt}]
     }]
+    }, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
     })
-return result.data.candidates[0].content.parts[0].text
+    
+    // Check if response structure is valid
+    if (!result.data || !result.data.candidates || !result.data.candidates[0] || 
+        !result.data.candidates[0].content || !result.data.candidates[0].content.parts || 
+        !result.data.candidates[0].content.parts[0] || !result.data.candidates[0].content.parts[0].text) {
+        console.error("Invalid Gemini API response structure:", result.data);
+        throw new Error("Invalid response structure from Gemini API");
+    }
+    
+    return result.data.candidates[0].content.parts[0].text
 } catch (error) {
-    console.log(error)
+    console.error("Gemini API error details:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        url: error.config?.url
+    });
+    throw new Error(`Gemini API error: ${error.message || 'Unknown error'}`)
 }
 }
 

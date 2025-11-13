@@ -67,8 +67,14 @@ synth.speak(utterence);
   }
 
   const handleCommand=(data)=>{
+    if (!data || !data.type || !data.response) {
+      console.error("Invalid data received:", data);
+      speak("Sorry, I couldn't process that request. Please try again.");
+      return;
+    }
+    
     const {type,userInput,response}=data
-      speak(response);
+    speak(response);
     
     if (type === 'google-search') {
       const query = encodeURIComponent(userInput);
@@ -163,7 +169,7 @@ useEffect(() => {
 
   recognition.onresult = async (e) => {
     const transcript = e.results[e.results.length - 1][0].transcript.trim();
-    if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
+    if (userData && userData.assistantName && transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
       setAiText("");
       setUserText(transcript);
       recognition.stop();
@@ -171,16 +177,19 @@ useEffect(() => {
       setListening(false);
       const data = await getGeminiResponse(transcript);
       handleCommand(data);
-      setAiText(data.response);
+      if (data && data.response) {
+        setAiText(data.response);
+      }
       setUserText("");
     }
   };
 
 
-    const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
-    greeting.lang = 'hi-IN';
-   
-    window.speechSynthesis.speak(greeting);
+    if (userData && userData.name) {
+      const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
+      greeting.lang = 'hi-IN';
+      window.speechSynthesis.speak(greeting);
+    }
  
 
   return () => {
@@ -207,8 +216,8 @@ useEffect(() => {
 <h1 className='text-white font-semibold text-[19px]'>History</h1>
 
 <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
-  {userData.history?.map((his)=>(
-    <div className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
+  {userData.history?.map((his, index)=>(
+    <div key={`history-${index}-${his}`} className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
   ))}
 
 </div>

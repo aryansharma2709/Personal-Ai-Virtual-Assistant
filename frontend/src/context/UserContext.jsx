@@ -23,6 +23,7 @@ try {
   return result.data
 } catch (error) {
   console.log(error)
+  return { type: 'error', response: "Sorry, I'm having trouble connecting. Please try again." }
 }
     }
 
