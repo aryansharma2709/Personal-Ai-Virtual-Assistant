@@ -20,10 +20,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false
       - key: CORS_ORIGIN
-        fromService:
-          type: web
-          name: virtual-assistant-frontend
-          property: url
+        value: https://virtual-assistant-frontend.onrender.com
 
   # Frontend Service
   - type: web
@@ -33,8 +30,5 @@ services:
     staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: virtual-assistant-backend
-          property: url
+        value: https://virtual-assistant-backend.onrender.com
 
