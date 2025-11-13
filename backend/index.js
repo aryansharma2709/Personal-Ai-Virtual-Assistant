@@ -11,7 +11,7 @@ import geminiResponse from "./gemini.js"
 
 const app=express()
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    origin:"http://localhost:5173",
     credentials:true
 }))
 const port=process.env.PORT || 5000
@@ -20,22 +20,6 @@ app.use(cookieParser())
 app.use("/api/auth",authRouter)
 app.use("/api/user",userRouter)
 
-// Health check route
-app.get("/", (req, res) => {
-    res.json({ 
-        message: "Virtual Assistant API is running",
-        status: "ok",
-        endpoints: {
-            auth: "/api/auth",
-            user: "/api/user"
-        }
-    })
-})
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-    res.json({ status: "ok", message: "Server is healthy" })
-})
 
 app.listen(port,()=>{
     connectDb()
