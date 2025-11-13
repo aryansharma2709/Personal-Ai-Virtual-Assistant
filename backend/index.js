@@ -20,6 +20,22 @@ app.use(cookieParser())
 app.use("/api/auth",authRouter)
 app.use("/api/user",userRouter)
 
+// Health check route
+app.get("/", (req, res) => {
+    res.json({ 
+        message: "Virtual Assistant API is running",
+        status: "ok",
+        endpoints: {
+            auth: "/api/auth",
+            user: "/api/user"
+        }
+    })
+})
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+    res.json({ status: "ok", message: "Server is healthy" })
+})
 
 app.listen(port,()=>{
     connectDb()
